@@ -718,6 +718,14 @@ async def msg_add_sub_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             auto_link = f"https://t.me/{chat.username}"
     elif update.message.text:
         raw = update.message.text.strip()
+        if not (raw.startswith("@") or raw.lstrip("-").isdigit()):
+            await update.message.reply_text(
+                "❗ Нужен <b>@username</b> или числовой <b>ID канала</b> (начинается с <code>-100...</code>), "
+                "а не его название.\n\nПроще всего — просто <b>перешлите любой пост</b> из этого канала сюда.",
+                parse_mode=ParseMode.HTML,
+                reply_markup=cancel_keyboard("admin:sub_channels"),
+            )
+            return ADD_SUB_CHAT
         chat_ref: int | str = int(raw) if raw.lstrip("-").isdigit() else raw
         try:
             chat = await context.bot.get_chat(chat_ref)
@@ -726,10 +734,13 @@ async def msg_add_sub_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             if getattr(chat, "username", None):
                 auto_link = f"https://t.me/{chat.username}"
         except Exception:
-            chat_id = raw
-            title = raw
-            if raw.startswith("@"):
-                auto_link = f"https://t.me/{raw[1:]}"
+            await update.message.reply_text(
+                "❌ Бот не смог найти этот канал.\n"
+                "Убедитесь, что бот <b>добавлен администратором</b> в канал, и <b>перешлите любой пост</b> из канала сюда (или отправьте верный ID <code>-100...</code>).",
+                parse_mode=ParseMode.HTML,
+                reply_markup=cancel_keyboard("admin:sub_channels"),
+            )
+            return ADD_SUB_CHAT
     else:
         await update.message.reply_text(
             "❗ Перешлите сообщение из канала или отправьте его @username / ID.",
